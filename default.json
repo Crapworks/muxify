@@ -1,0 +1,21 @@
+{
+	"workspace": "default",
+	"windows": [ {
+		"name": "default",
+		"command": "top",
+		"panes": [ {
+			"split": "v",
+			"percentage": 50,
+			"target": 0,
+			"command": "vim"
+		}, {
+			"split": "h",
+			"percentage": 65,
+			"target": 1
+		}, {
+			"split": "h",
+			"percentage": 45,
+			"target": 0
+		} ]
+	} ]
+}

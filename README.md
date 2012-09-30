@@ -1,4 +1,20 @@
 muxify
 ======
 
-python script to create tmux sessions/windows/layouts from json templates 
+Python script to create tmux sessions/windows/layouts from json templates 
+Currently under *HEAVY DEVELOPMENT*
+
+EXAMPLES
+========
+
+$ muxify.py -l
+puppet
+dev
+database
+
+$ muxify database
+
+TODO
+====
+Implement a SAVE function to save the current tmux window/session
+
