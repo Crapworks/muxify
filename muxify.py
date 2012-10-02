@@ -2,6 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import os
+import argparse
 
 from subprocess import call
 from json import load
@@ -19,7 +20,12 @@ class TMUXWorkspaceList(list):
 
         for filename in os.listdir(self.workspace_dir):
             if filename.endswith('.json'):
-                self.append(TMUXWorkspace(os.path.join(self.workspace_dir, filename)))
+                try:
+                    tmp = TMUXWorkspace(os.path.join(self.workspace_dir, filename))
+                except ValueError, err:
+                    print "invalid json in file %s: %s" % (filename, err)
+                else:
+                    self.append(tmp)
 
     def start(self, workspacename):
         for workspace in self:
@@ -27,7 +33,7 @@ class TMUXWorkspaceList(list):
                 workspace.create()
                 return
 
-        raise KeyError("unknown workspace: %s" % (workspacename,))
+        print "unknown workspace: %s" % (workspacename,)
 
     def list(self):
         return [ workspace.name for workspace in self ]
@@ -46,20 +52,15 @@ class TMUXWorkspace(object):
         self.windows = {}
 
         for window in self.workspace['windows']:
-            if 'command' in window.keys():
-                self.windows[window['name']] = TMUXWindow(window['name'], window['command'])
-            else:
-                self.windows[window['name']] = TMUXWindow(window['name'])
-
-            if 'panes' in window.keys():
-                for pane in window['panes']:
-                    self.windows[window['name']].add_pane(TMUXPane(**pane))
+            self.windows[window['name']] = TMUXWindow(**window)
 
     def create(self):
         for window in self.windows:
             call(self.windows[window])
             for pane in self.windows[window].get_panes():
                 call(pane)
+            if self.windows[window].get_layout():
+                call(self.windows[window].get_layout())
 
 
 class TMUXPane(list):
@@ -91,14 +92,18 @@ class TMUXWindow(list):
     @command: command to execute in the new window
     """
 
-    def __init__(self, name=None, command=None):
+    def __init__(self, name=None, command=None, layout=None, panes=None):
         self.panes = []
+        self.layout = layout
 
         self += ['tmux', 'new-window']
         if name:
             self += ['-n', name]
         if command:
             self += [command, ]
+        if panes:
+            for pane in panes:
+                self.add_pane(TMUXPane(**pane))
 
     def add_pane(self, pane):
         self.panes.append(pane)
@@ -106,9 +111,23 @@ class TMUXWindow(list):
     def get_panes(self):
         return self.panes
 
+    def get_layout(self):
+        if not self.layout:
+            return None
+
+        return ['tmux', 'select-layout', self.layout]
+
     def __str__(self):
         return " ".join(self)
 
 if __name__ == '__main__':
-    workpspaces = TMUXWorkspaceList()
-    workpspaces.start('default')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-l", "--list", help="list available workspaces", action='store_const', const=True, default=False)
+    parser.add_argument("workspace", help="load workspace in tmux", nargs="?", default="default")
+    args = parser.parse_args()
+
+    workspaces = TMUXWorkspaceList()
+    if args.list:
+        print "\n".join(workspaces.list())
+    else:
+        workspaces.start(args.workspace)
