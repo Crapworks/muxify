@@ -7,12 +7,14 @@ muxify
 EXAMPLES
 ========
 
+```bash
 $ muxify.py -l
 puppet
 dev
 database
 
 $ muxify database
+```
 
 TODO
 ====
